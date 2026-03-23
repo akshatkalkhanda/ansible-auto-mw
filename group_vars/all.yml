@@ -1,0 +1,10 @@
+---
+esxi_hostname: "esxi.example.com"
+esxi_username: "root"
+esxi_password: "your_esxi_password_here"
+esxi_validate_certs: false
+
+snapshot_name_prefix: "pre-update"
+snapshot_description: "Automated pre-update snapshot taken by Ansible"
+snapshot_memory: false
+snapshot_quiesce: false

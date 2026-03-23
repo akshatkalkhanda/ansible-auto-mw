@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: vmware_snapshot
+  author: your_name
+  description: Take snapshots of all Linux VMs on a standalone VMware ESXi host
+  min_ansible_version: "2.14"
+  platforms:
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+  galaxy_tags:
+    - vmware
+    - esxi
+    - snapshot
+
+dependencies: []

@@ -1,0 +1,16 @@
+---
+- name: Take VMware ESXi snapshots of all Linux VMs
+  hosts: localhost
+  gather_facts: false
+  tags: [snapshot]
+  roles:
+    - role: vmware_snapshot
+
+- name: Update and reboot Linux VMs
+  hosts: linux_vms
+  gather_facts: true
+  become: true
+  serial: 1
+  tags: [update]
+  roles:
+    - role: linux_yum_update

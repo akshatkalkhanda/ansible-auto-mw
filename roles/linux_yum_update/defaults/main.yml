@@ -1,0 +1,8 @@
+---
+yum_update_exclude: []
+
+reboot_timeout: 600
+reboot_connect_timeout: 60
+reboot_pre_reboot_delay: 5
+reboot_post_reboot_delay: 30
+reboot_test_command: "uptime"

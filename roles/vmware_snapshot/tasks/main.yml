@@ -1,0 +1,97 @@
+---
+- name: Build snapshot name with today's date
+  ansible.builtin.set_fact:
+    full_snapshot_name: "{{ snapshot_name_prefix }}-{{ lookup('pipe', 'date +%Y-%m-%d') }}"
+
+- name: Gather list of all VMs on ESXi host
+  community.vmware.vmware_vm_info:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ esxi_username }}"
+    password: "{{ esxi_password }}"
+    validate_certs: "{{ esxi_validate_certs }}"
+  register: all_vms_result
+  delegate_to: localhost
+
+- name: Display all discovered VM names
+  ansible.builtin.debug:
+    msg: "Discovered VM: {{ item.guest_name }} (power state: {{ item.power_state }})"
+  loop: "{{ all_vms_result.virtual_machines }}"
+  loop_control:
+    label: "{{ item.guest_name }}"
+
+- name: Get detailed guest info for each VM
+  community.vmware.vmware_guest_info:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ esxi_username }}"
+    password: "{{ esxi_password }}"
+    validate_certs: "{{ esxi_validate_certs }}"
+    datacenter: "ha-datacenter"
+    name: "{{ item.guest_name }}"
+  loop: "{{ all_vms_result.virtual_machines }}"
+  loop_control:
+    label: "{{ item.guest_name }}"
+  register: vm_guest_info_results
+  delegate_to: localhost
+
+- name: Build flat list of detailed VM objects
+  ansible.builtin.set_fact:
+    all_vm_details: >-
+      {{
+        vm_guest_info_results.results
+        | selectattr('failed', 'equalto', false)
+        | map(attribute='instance')
+        | list
+      }}
+
+- name: Filter to Linux VMs only (by hw_guest_id, excluding Windows)
+  ansible.builtin.set_fact:
+    linux_vms_list: >-
+      {{
+        all_vm_details
+        | selectattr('hw_guest_id', 'defined')
+        | rejectattr('hw_guest_id', 'search', '(?i)windows|win')
+        | selectattr('hw_guest_id', 'search', '(?i)' + linux_guest_id_patterns | join('|'))
+        | list
+      }}
+
+- name: Display Linux VMs selected for snapshotting
+  ansible.builtin.debug:
+    msg: "Linux VM selected for snapshot: {{ item.hw_name }} (guest_id: {{ item.hw_guest_id }})"
+  loop: "{{ linux_vms_list }}"
+  loop_control:
+    label: "{{ item.hw_name }}"
+
+- name: Fail if no Linux VMs were found
+  ansible.builtin.fail:
+    msg: >-
+      No Linux VMs were found on ESXi host {{ esxi_hostname }}.
+      Check that linux_guest_id_patterns in defaults/main.yml matches your guest OS types.
+      Current patterns: {{ linux_guest_id_patterns | join(', ') }}
+  when: linux_vms_list | length == 0
+
+- name: Take snapshot of each Linux VM
+  community.vmware.vmware_guest_snapshot:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ esxi_username }}"
+    password: "{{ esxi_password }}"
+    validate_certs: "{{ esxi_validate_certs }}"
+    datacenter: "ha-datacenter"
+    name: "{{ item.hw_name }}"
+    state: present
+    snapshot_name: "{{ full_snapshot_name }}"
+    description: "{{ snapshot_description }}"
+    memory_dump: "{{ snapshot_memory }}"
+    quiesce: "{{ snapshot_quiesce }}"
+  loop: "{{ linux_vms_list }}"
+  loop_control:
+    label: "{{ item.hw_name }}"
+  register: snapshot_results
+  delegate_to: localhost
+
+- name: Report snapshot results
+  ansible.builtin.debug:
+    msg: "Snapshot '{{ full_snapshot_name }}' created successfully for VM: {{ item.item.hw_name }}"
+  loop: "{{ snapshot_results.results }}"
+  loop_control:
+    label: "{{ item.item.hw_name }}"
+  when: not item.failed

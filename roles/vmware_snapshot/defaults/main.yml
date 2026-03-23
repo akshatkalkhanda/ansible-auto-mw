@@ -1,0 +1,19 @@
+---
+snapshot_name_prefix: "pre-update"
+snapshot_description: "Automated pre-update snapshot taken by Ansible"
+snapshot_memory: false
+snapshot_quiesce: false
+
+linux_guest_id_patterns:
+  - "rhel"
+  - "centos"
+  - "ubuntu"
+  - "debian"
+  - "fedora"
+  - "sles"
+  - "opensuse"
+  - "oracle"
+  - "amazon"
+  - "alma"
+  - "rocky"
+  - "linux"

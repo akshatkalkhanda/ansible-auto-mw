@@ -1,0 +1,47 @@
+---
+- name: Verify host is reachable and gather facts
+  ansible.builtin.setup:
+    gather_subset:
+      - min
+
+- name: Assert host is running a yum-based distribution
+  ansible.builtin.assert:
+    that:
+      - ansible_pkg_mgr == 'yum' or ansible_pkg_mgr == 'dnf'
+    fail_msg: >-
+      This role requires a yum or dnf based system.
+      Detected package manager: {{ ansible_pkg_mgr }}
+    success_msg: "Package manager is {{ ansible_pkg_mgr }} — proceeding with update."
+
+- name: Apply all yum/dnf updates
+  ansible.builtin.package:
+    name: "*"
+    state: latest
+    exclude: "{{ yum_update_exclude }}"
+  register: yum_update_result
+
+- name: Display packages that were updated
+  ansible.builtin.debug:
+    msg: >-
+      {{ yum_update_result.results | default(['No packages were updated']) | join('\n') }}
+
+- name: Reboot host after update
+  ansible.builtin.reboot:
+    reboot_timeout: "{{ reboot_timeout }}"
+    connect_timeout: "{{ reboot_connect_timeout }}"
+    pre_reboot_delay: "{{ reboot_pre_reboot_delay }}"
+    post_reboot_delay: "{{ reboot_post_reboot_delay }}"
+    test_command: "{{ reboot_test_command }}"
+    msg: "Rebooting {{ inventory_hostname }} after yum update"
+
+- name: Gather facts after reboot to confirm host is online
+  ansible.builtin.setup:
+    gather_subset:
+      - hardware
+
+- name: Report running kernel after update and reboot
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }} is back online.
+      Running kernel: {{ ansible_kernel }}
+      Update and reboot complete.
