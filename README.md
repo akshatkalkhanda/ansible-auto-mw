@@ -56,8 +56,8 @@ Open `group_vars/all.yml` and fill in your ESXi details:
 ```yaml
 esxi_hostname: "esxi.example.com"   # IP or FQDN of the ESXi host
 esxi_username: "root"               # ESXi username
-esxi_password: "your_password"      # ESXi password
-esxi_validate_certs: false          # Set to true if using a valid TLS cert
+esxi_password: ""                   # Required: set through Ansible Vault
+esxi_validate_certs: true          # Required: trust the issuing CA
 ```
 
 > **Security tip**: Store `esxi_password` in Ansible Vault rather than plain text.
@@ -191,4 +191,6 @@ ansible/
 | `community.vmware collection not found` | Run `ansible-galaxy collection install -r requirements.yml` |
 | No Linux VMs found | Check `linux_guest_id_patterns` in snapshot role defaults; verify guest IDs in ESXi UI |
 | SSH connection refused | Check `ansible_user` and `ansible_ssh_private_key_file` in inventory |
-| Certificate errors against ESXi | Set `esxi_validate_certs: true` or import the ESXi cert into the control node trust store |
+| Certificate errors against ESXi | Import the issuing CA into the control node trust store; keep TLS verification enabled |
+
+Credential requirements: [private deployment credentials](docs/credential-security.md).

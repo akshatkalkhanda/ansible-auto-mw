@@ -1,0 +1,11 @@
+---
+- name: Require private ESXi credentials and verified TLS before connecting
+  ansible.builtin.assert:
+    that:
+      - esxi_password | default('') is string
+      - esxi_password | default('') | length >= 12
+      - esxi_password | default('') != 'your_esxi_password_here'
+      - esxi_validate_certs | default(true) | bool
+    fail_msg: Supply a private ESXi password through Ansible Vault and trust the ESXi TLS certificate.
+    quiet: true
+  no_log: true

@@ -1,4 +1,7 @@
 ---
+- name: Validate ESXi credentials before connecting
+  ansible.builtin.import_tasks: validate.yml
+
 - name: Build snapshot name with today's date
   ansible.builtin.set_fact:
     full_snapshot_name: "{{ snapshot_name_prefix }}-{{ lookup('pipe', 'date +%Y-%m-%d') }}"

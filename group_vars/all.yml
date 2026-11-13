@@ -1,8 +1,8 @@
 ---
 esxi_hostname: "esxi.example.com"
 esxi_username: "root"
-esxi_password: "your_esxi_password_here"
-esxi_validate_certs: false
+esxi_password: ""  # Required: supply via Ansible Vault
+esxi_validate_certs: true
 
 snapshot_name_prefix: "pre-update"
 snapshot_description: "Automated pre-update snapshot taken by Ansible"
